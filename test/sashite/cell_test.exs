@@ -1,8 +1,6 @@
 defmodule Sashite.CellTest do
   use ExUnit.Case, async: true
 
-  alias Sashite.Cell
-
   doctest Sashite.Cell
 
   # ============================================================================
@@ -14,7 +12,7 @@ defmodule Sashite.CellTest do
       # Exact regex from CELL Specification v1.0.0
       spec_regex = ~r/^[a-z]+(?:[1-9][0-9]*[A-Z]+[a-z]+)*(?:[1-9][0-9]*[A-Z]*)?$/
 
-      assert Cell.regex().source == spec_regex.source
+      assert Sashite.Cell.regex().source == spec_regex.source
     end
 
     test "all specification valid examples are accepted" do
@@ -43,7 +41,7 @@ defmodule Sashite.CellTest do
       ]
 
       for coord <- spec_valid_examples do
-        assert Cell.valid?(coord), "Specification example '#{coord}' should be valid"
+        assert Sashite.Cell.valid?(coord), "Specification example '#{coord}' should be valid"
       end
     end
 
@@ -61,7 +59,7 @@ defmodule Sashite.CellTest do
       ]
 
       for coord <- spec_invalid_examples do
-        refute Cell.valid?(coord), "Specification invalid example '#{coord}' should be rejected"
+        refute Sashite.Cell.valid?(coord), "Specification invalid example '#{coord}' should be rejected"
       end
     end
 
@@ -77,10 +75,10 @@ defmodule Sashite.CellTest do
       ]
 
       for {coord, expected_dims} <- test_cases do
-        assert Cell.dimensions(coord) == expected_dims,
+        assert Sashite.Cell.dimensions(coord) == expected_dims,
                "#{coord} should have #{expected_dims} dimensions"
 
-        assert Cell.valid?(coord), "#{coord} should be valid according to cyclical system"
+        assert Sashite.Cell.valid?(coord), "#{coord} should be valid according to cyclical system"
       end
     end
   end
@@ -119,7 +117,7 @@ defmodule Sashite.CellTest do
       ]
 
       for coord <- valid_coordinates do
-        assert Cell.valid?(coord), "#{inspect(coord)} should be valid"
+        assert Sashite.Cell.valid?(coord), "#{inspect(coord)} should be valid"
       end
     end
 
@@ -157,7 +155,7 @@ defmodule Sashite.CellTest do
       ]
 
       for coord <- invalid_coordinates do
-        refute Cell.valid?(coord), "#{inspect(coord)} should be invalid"
+        refute Sashite.Cell.valid?(coord), "#{inspect(coord)} should be invalid"
       end
     end
 
@@ -173,7 +171,7 @@ defmodule Sashite.CellTest do
       ]
 
       for coord <- line_break_cases do
-        refute Cell.valid?(coord), "#{inspect(coord)} should be invalid (contains line break)"
+        refute Sashite.Cell.valid?(coord), "#{inspect(coord)} should be invalid (contains line break)"
       end
     end
 
@@ -181,7 +179,7 @@ defmodule Sashite.CellTest do
       non_strings = [nil, 123, :a1, [], %{}, true, false, 1.5]
 
       for input <- non_strings do
-        refute Cell.valid?(input), "#{inspect(input)} should be invalid"
+        refute Sashite.Cell.valid?(input), "#{inspect(input)} should be invalid"
       end
     end
   end
@@ -213,7 +211,7 @@ defmodule Sashite.CellTest do
       ]
 
       for {coord, expected_components} <- parse_cases do
-        assert {:ok, ^expected_components} = Cell.parse(coord)
+        assert {:ok, ^expected_components} = Sashite.Cell.parse(coord)
       end
     end
 
@@ -221,24 +219,24 @@ defmodule Sashite.CellTest do
       invalid_inputs = ["", "1a", "A1a", "a0", "*", "a1\n"]
 
       for input <- invalid_inputs do
-        assert {:error, _reason} = Cell.parse(input)
+        assert {:error, _reason} = Sashite.Cell.parse(input)
       end
     end
 
     test "returns error for non-string input" do
-      assert {:error, _reason} = Cell.parse(nil)
-      assert {:error, _reason} = Cell.parse(123)
+      assert {:error, _reason} = Sashite.Cell.parse(nil)
+      assert {:error, _reason} = Sashite.Cell.parse(123)
     end
   end
 
   describe "parse!/1" do
     test "returns components for valid coordinate" do
-      assert ["a", "1", "A"] = Cell.parse!("a1A")
+      assert ["a", "1", "A"] = Sashite.Cell.parse!("a1A")
     end
 
     test "raises ArgumentError for invalid coordinate" do
       assert_raise ArgumentError, fn ->
-        Cell.parse!("invalid!")
+        Sashite.Cell.parse!("invalid!")
       end
     end
   end
@@ -263,7 +261,7 @@ defmodule Sashite.CellTest do
       ]
 
       for {coord, expected_dimensions} <- dimension_cases do
-        assert Cell.dimensions(coord) == expected_dimensions,
+        assert Sashite.Cell.dimensions(coord) == expected_dimensions,
                "#{inspect(coord)} should have #{expected_dimensions} dimensions"
       end
     end
@@ -272,7 +270,7 @@ defmodule Sashite.CellTest do
       invalid_inputs = [nil, "", 123, [], "1a", "A1a", "a0", "*"]
 
       for input <- invalid_inputs do
-        assert Cell.dimensions(input) == 0,
+        assert Sashite.Cell.dimensions(input) == 0,
                "#{inspect(input)} should return 0 dimensions"
       end
     end
@@ -306,7 +304,7 @@ defmodule Sashite.CellTest do
       ]
 
       for {coord, expected_indices} <- conversion_cases do
-        assert {:ok, ^expected_indices} = Cell.to_indices(coord)
+        assert {:ok, ^expected_indices} = Sashite.Cell.to_indices(coord)
       end
     end
 
@@ -314,20 +312,20 @@ defmodule Sashite.CellTest do
       invalid_coords = ["", "a0", "1a", "*", "a1a"]
 
       for coord <- invalid_coords do
-        assert {:error, _reason} = Cell.to_indices(coord)
+        assert {:error, _reason} = Sashite.Cell.to_indices(coord)
       end
     end
   end
 
   describe "to_indices!/1" do
     test "returns indices for valid coordinate" do
-      assert {4, 3} = Cell.to_indices!("e4")
-      assert {0, 0, 0} = Cell.to_indices!("a1A")
+      assert {4, 3} = Sashite.Cell.to_indices!("e4")
+      assert {0, 0, 0} = Sashite.Cell.to_indices!("a1A")
     end
 
     test "raises ArgumentError for invalid coordinate" do
       assert_raise ArgumentError, fn ->
-        Cell.to_indices!("1nvalid")
+        Sashite.Cell.to_indices!("1nvalid")
       end
     end
   end
@@ -356,29 +354,29 @@ defmodule Sashite.CellTest do
       ]
 
       for {indices, expected_coord} <- conversion_cases do
-        assert {:ok, ^expected_coord} = Cell.from_indices(indices)
+        assert {:ok, ^expected_coord} = Sashite.Cell.from_indices(indices)
       end
     end
 
     test "returns error for empty tuple" do
-      assert {:error, "Cannot convert empty tuple to CELL coordinate"} = Cell.from_indices({})
+      assert {:error, "Cannot convert empty tuple to CELL coordinate"} = Sashite.Cell.from_indices({})
     end
 
     test "returns error for non-tuple input" do
-      assert {:error, _reason} = Cell.from_indices([0, 0])
-      assert {:error, _reason} = Cell.from_indices(nil)
+      assert {:error, _reason} = Sashite.Cell.from_indices([0, 0])
+      assert {:error, _reason} = Sashite.Cell.from_indices(nil)
     end
   end
 
   describe "from_indices!/1" do
     test "returns coordinate for valid indices" do
-      assert "e4" = Cell.from_indices!({4, 3})
-      assert "a1A" = Cell.from_indices!({0, 0, 0})
+      assert "e4" = Sashite.Cell.from_indices!({4, 3})
+      assert "a1A" = Sashite.Cell.from_indices!({0, 0, 0})
     end
 
     test "raises ArgumentError for empty tuple" do
       assert_raise ArgumentError, fn ->
-        Cell.from_indices!({})
+        Sashite.Cell.from_indices!({})
       end
     end
   end
@@ -411,8 +409,8 @@ defmodule Sashite.CellTest do
       ]
 
       for coord <- test_coordinates do
-        indices = Cell.to_indices!(coord)
-        converted_back = Cell.from_indices!(indices)
+        indices = Sashite.Cell.to_indices!(coord)
+        converted_back = Sashite.Cell.from_indices!(indices)
 
         assert converted_back == coord,
                "Round-trip failed for #{inspect(coord)}: got #{inspect(converted_back)}"
@@ -441,8 +439,8 @@ defmodule Sashite.CellTest do
       ]
 
       for indices <- test_indices do
-        coord = Cell.from_indices!(indices)
-        converted_back = Cell.to_indices!(coord)
+        coord = Sashite.Cell.from_indices!(indices)
+        converted_back = Sashite.Cell.to_indices!(coord)
 
         assert converted_back == indices,
                "Round-trip failed for #{inspect(indices)}: got #{inspect(converted_back)}"
@@ -463,8 +461,8 @@ defmodule Sashite.CellTest do
       ]
 
       for {index, expected_letter} <- single_letter_cases do
-        assert {:ok, ^expected_letter} = Cell.from_indices({index})
-        assert {:ok, {^index}} = Cell.to_indices(expected_letter)
+        assert {:ok, ^expected_letter} = Sashite.Cell.from_indices({index})
+        assert {:ok, {^index}} = Sashite.Cell.to_indices(expected_letter)
       end
     end
 
@@ -479,15 +477,15 @@ defmodule Sashite.CellTest do
       ]
 
       for {index, expected_letters} <- double_letter_cases do
-        assert {:ok, ^expected_letters} = Cell.from_indices({index})
-        assert {:ok, {^index}} = Cell.to_indices(expected_letters)
+        assert {:ok, ^expected_letters} = Sashite.Cell.from_indices({index})
+        assert {:ok, {^index}} = Sashite.Cell.to_indices(expected_letters)
       end
     end
 
     test "triple letters encode correctly" do
       # aaa = 702
-      assert {:ok, "aaa"} = Cell.from_indices({702})
-      assert {:ok, {702}} = Cell.to_indices("aaa")
+      assert {:ok, "aaa"} = Sashite.Cell.from_indices({702})
+      assert {:ok, {702}} = Sashite.Cell.to_indices("aaa")
     end
   end
 
@@ -502,28 +500,28 @@ defmodule Sashite.CellTest do
           "#{<<file>>}#{rank}"
         end
 
-      assert Enum.all?(chess_squares, &Cell.valid?/1)
+      assert Enum.all?(chess_squares, &Sashite.Cell.valid?/1)
     end
 
     test "specific chess positions convert correctly" do
-      assert {:ok, {4, 3}} = Cell.to_indices("e4")
-      assert {:ok, {7, 7}} = Cell.to_indices("h8")
-      assert {:ok, {0, 0}} = Cell.to_indices("a1")
+      assert {:ok, {4, 3}} = Sashite.Cell.to_indices("e4")
+      assert {:ok, {7, 7}} = Sashite.Cell.to_indices("h8")
+      assert {:ok, {0, 0}} = Sashite.Cell.to_indices("a1")
 
-      assert {:ok, "e4"} = Cell.from_indices({4, 3})
-      assert {:ok, "h8"} = Cell.from_indices({7, 7})
+      assert {:ok, "e4"} = Sashite.Cell.from_indices({4, 3})
+      assert {:ok, "h8"} = Sashite.Cell.from_indices({7, 7})
     end
   end
 
   describe "shogi board (9×9)" do
     test "shogi positions are valid" do
-      assert Cell.valid?("e5")
-      assert Cell.valid?("i9")
-      assert Cell.valid?("a1")
+      assert Sashite.Cell.valid?("e5")
+      assert Sashite.Cell.valid?("i9")
+      assert Sashite.Cell.valid?("a1")
     end
 
     test "shogi center position converts correctly" do
-      assert {:ok, {4, 4}} = Cell.to_indices("e5")
+      assert {:ok, {4, 4}} = Sashite.Cell.to_indices("e5")
     end
   end
 
@@ -532,11 +530,11 @@ defmodule Sashite.CellTest do
       positions_3d = ["a1A", "b2B", "c3C", "a3A", "c1C"]
 
       for coord <- positions_3d do
-        assert Cell.valid?(coord), "3D coordinate #{inspect(coord)} should be valid"
-        assert Cell.dimensions(coord) == 3, "3D coordinate should have 3 dimensions"
+        assert Sashite.Cell.valid?(coord), "3D coordinate #{inspect(coord)} should be valid"
+        assert Sashite.Cell.dimensions(coord) == 3, "3D coordinate should have 3 dimensions"
 
         # Ensure indices are in valid range for 3×3×3
-        {:ok, indices} = Cell.to_indices(coord)
+        {:ok, indices} = Sashite.Cell.to_indices(coord)
 
         indices
         |> Tuple.to_list()
@@ -550,7 +548,7 @@ defmodule Sashite.CellTest do
       diagonal_positions = ["a1A", "b2B", "c3C"]
       expected_diagonal = [{0, 0, 0}, {1, 1, 1}, {2, 2, 2}]
 
-      actual_diagonal = Enum.map(diagonal_positions, &Cell.to_indices!/1)
+      actual_diagonal = Enum.map(diagonal_positions, &Sashite.Cell.to_indices!/1)
 
       assert actual_diagonal == expected_diagonal
     end
@@ -565,10 +563,10 @@ defmodule Sashite.CellTest do
       large_coords = ["z26Z", "aa27AA", "zz702ZZ", "abc999XYZ"]
 
       for coord <- large_coords do
-        assert Cell.valid?(coord), "Large coordinate #{inspect(coord)} should be valid"
+        assert Sashite.Cell.valid?(coord), "Large coordinate #{inspect(coord)} should be valid"
 
-        indices = Cell.to_indices!(coord)
-        converted_back = Cell.from_indices!(indices)
+        indices = Sashite.Cell.to_indices!(coord)
+        converted_back = Sashite.Cell.from_indices!(indices)
 
         assert converted_back == coord,
                "Round-trip failed for large coordinate #{inspect(coord)}"
@@ -579,10 +577,10 @@ defmodule Sashite.CellTest do
       high_dim_coords = ["a1Aa1Aa1A", "b2Bb2Bb2B"]
 
       for coord <- high_dim_coords do
-        assert Cell.valid?(coord), "High-dimensional coordinate #{inspect(coord)} should be valid"
+        assert Sashite.Cell.valid?(coord), "High-dimensional coordinate #{inspect(coord)} should be valid"
 
-        components = Cell.parse!(coord)
-        assert Cell.dimensions(coord) == length(components)
+        components = Sashite.Cell.parse!(coord)
+        assert Sashite.Cell.dimensions(coord) == length(components)
       end
     end
 
@@ -591,12 +589,12 @@ defmodule Sashite.CellTest do
       numeric_coords = ["a1", "a10", "a100", "a999"]
 
       for coord <- numeric_coords do
-        assert Cell.valid?(coord), "Numeric coordinate #{inspect(coord)} should be valid"
+        assert Sashite.Cell.valid?(coord), "Numeric coordinate #{inspect(coord)} should be valid"
 
-        [_letters, numeric_str] = Cell.parse!(coord)
+        [_letters, numeric_str] = Sashite.Cell.parse!(coord)
         expected_index = String.to_integer(numeric_str) - 1
 
-        {:ok, {_letter_index, actual_numeric_index}} = Cell.to_indices(coord)
+        {:ok, {_letter_index, actual_numeric_index}} = Sashite.Cell.to_indices(coord)
 
         assert actual_numeric_index == expected_index,
                "Numeric component #{numeric_str} should convert to #{expected_index}"
@@ -606,7 +604,7 @@ defmodule Sashite.CellTest do
       zero_coords = ["a0", "a0A", "a01A", "aa0AA", "a1Aa0"]
 
       for coord <- zero_coords do
-        refute Cell.valid?(coord),
+        refute Sashite.Cell.valid?(coord),
                "Zero-containing coordinate #{inspect(coord)} should be invalid"
       end
     end
@@ -615,7 +613,7 @@ defmodule Sashite.CellTest do
       leading_zero_coords = ["a01", "a001", "a01A", "a001A"]
 
       for coord <- leading_zero_coords do
-        refute Cell.valid?(coord),
+        refute Sashite.Cell.valid?(coord),
                "Leading zero coordinate #{inspect(coord)} should be invalid"
       end
     end
@@ -627,14 +625,14 @@ defmodule Sashite.CellTest do
 
       # Test that repeated calls give consistent results
       for _ <- 1..5 do
-        assert Cell.valid?(test_coord) == true
-        assert Cell.dimensions(test_coord) == 2
-        assert Cell.parse(test_coord) == {:ok, ["e", "4"]}
-        assert Cell.to_indices(test_coord) == {:ok, {4, 3}}
+        assert Sashite.Cell.valid?(test_coord) == true
+        assert Sashite.Cell.dimensions(test_coord) == 2
+        assert Sashite.Cell.parse(test_coord) == {:ok, ["e", "4"]}
+        assert Sashite.Cell.to_indices(test_coord) == {:ok, {4, 3}}
       end
 
       for _ <- 1..5 do
-        assert Cell.from_indices({4, 3}) == {:ok, "e4"}
+        assert Sashite.Cell.from_indices({4, 3}) == {:ok, "e4"}
       end
     end
   end
@@ -645,33 +643,33 @@ defmodule Sashite.CellTest do
 
   describe "specification constraints" do
     test "only ASCII characters are valid" do
-      assert Cell.valid?("abc123XYZ")
-      refute Cell.valid?("café")
-      refute Cell.valid?("αβγ")
+      assert Sashite.Cell.valid?("abc123XYZ")
+      refute Sashite.Cell.valid?("café")
+      refute Sashite.Cell.valid?("αβγ")
     end
 
     test "must start with dimension 1 (lowercase)" do
-      refute Cell.valid?("1a")
-      refute Cell.valid?("A1a")
+      refute Sashite.Cell.valid?("1a")
+      refute Sashite.Cell.valid?("A1a")
     end
 
     test "must follow cyclical progression" do
-      refute Cell.valid?("aA")
-      refute Cell.valid?("a1a")
-      refute Cell.valid?("a1A1")
+      refute Sashite.Cell.valid?("aA")
+      refute Sashite.Cell.valid?("a1a")
+      refute Sashite.Cell.valid?("a1A1")
     end
 
     test "partial completion is allowed" do
-      assert Cell.valid?("a")
-      assert Cell.valid?("a1")
-      assert Cell.valid?("a1A")
-      assert Cell.valid?("a1Aa")
-      assert Cell.valid?("a1Aa1")
+      assert Sashite.Cell.valid?("a")
+      assert Sashite.Cell.valid?("a1")
+      assert Sashite.Cell.valid?("a1A")
+      assert Sashite.Cell.valid?("a1Aa")
+      assert Sashite.Cell.valid?("a1Aa1")
     end
 
     test "mixed case is invalid" do
-      refute Cell.valid?("aBc")
-      refute Cell.valid?("AbC")
+      refute Sashite.Cell.valid?("aBc")
+      refute Sashite.Cell.valid?("AbC")
     end
   end
 end

@@ -35,51 +35,49 @@ CELL uses a cyclical three-character-set system that repeats indefinitely based 
 
 ## Usage
 ```elixir
-alias Sashite.Cell
-
 # Validation
-Cell.valid?("a1")       # => true (2D coordinate)
-Cell.valid?("a1A")      # => true (3D coordinate)
-Cell.valid?("e4")       # => true (2D coordinate)
-Cell.valid?("h8Hh8")    # => true (5D coordinate)
-Cell.valid?("*")        # => false (not a CELL coordinate)
-Cell.valid?("a0")       # => false (invalid numeral)
-Cell.valid?("")         # => false (empty string)
+Sashite.Cell.valid?("a1")       # => true (2D coordinate)
+Sashite.Cell.valid?("a1A")      # => true (3D coordinate)
+Sashite.Cell.valid?("e4")       # => true (2D coordinate)
+Sashite.Cell.valid?("h8Hh8")    # => true (5D coordinate)
+Sashite.Cell.valid?("*")        # => false (not a CELL coordinate)
+Sashite.Cell.valid?("a0")       # => false (invalid numeral)
+Sashite.Cell.valid?("")         # => false (empty string)
 
 # Dimensional analysis
-Cell.dimensions("a1")     # => 2
-Cell.dimensions("a1A")    # => 3
-Cell.dimensions("h8Hh8")  # => 5
-Cell.dimensions("foobar") # => 1
+Sashite.Cell.dimensions("a1")     # => 2
+Sashite.Cell.dimensions("a1A")    # => 3
+Sashite.Cell.dimensions("h8Hh8")  # => 5
+Sashite.Cell.dimensions("foobar") # => 1
 
 # Parse coordinate into dimensional components
-Cell.parse("a1A")      # => {:ok, ["a", "1", "A"]}
-Cell.parse("h8Hh8")    # => {:ok, ["h", "8", "H", "h", "8"]}
-Cell.parse("foobar")   # => {:ok, ["foobar"]}
-Cell.parse("1nvalid")  # => {:error, "Invalid CELL coordinate: 1nvalid"}
+Sashite.Cell.parse("a1A")      # => {:ok, ["a", "1", "A"]}
+Sashite.Cell.parse("h8Hh8")    # => {:ok, ["h", "8", "H", "h", "8"]}
+Sashite.Cell.parse("foobar")   # => {:ok, ["foobar"]}
+Sashite.Cell.parse("1nvalid")  # => {:error, "Invalid CELL coordinate: 1nvalid"}
 
 # Bang version for direct access
-Cell.parse!("a1A")     # => ["a", "1", "A"]
+Sashite.Cell.parse!("a1A")     # => ["a", "1", "A"]
 
 # Convert coordinates to 0-indexed integer tuples
-Cell.to_indices("a1")    # => {:ok, {0, 0}}
-Cell.to_indices("e4")    # => {:ok, {4, 3}}
-Cell.to_indices("a1A")   # => {:ok, {0, 0, 0}}
-Cell.to_indices("b2B")   # => {:ok, {1, 1, 1}}
+Sashite.Cell.to_indices("a1")    # => {:ok, {0, 0}}
+Sashite.Cell.to_indices("e4")    # => {:ok, {4, 3}}
+Sashite.Cell.to_indices("a1A")   # => {:ok, {0, 0, 0}}
+Sashite.Cell.to_indices("b2B")   # => {:ok, {1, 1, 1}}
 
 # Bang version
-Cell.to_indices!("e4")   # => {4, 3}
+Sashite.Cell.to_indices!("e4")   # => {4, 3}
 
 # Convert 0-indexed integer tuples back to CELL coordinates
-Cell.from_indices({0, 0})      # => {:ok, "a1"}
-Cell.from_indices({4, 3})      # => {:ok, "e4"}
-Cell.from_indices({0, 0, 0})   # => {:ok, "a1A"}
+Sashite.Cell.from_indices({0, 0})      # => {:ok, "a1"}
+Sashite.Cell.from_indices({4, 3})      # => {:ok, "e4"}
+Sashite.Cell.from_indices({0, 0, 0})   # => {:ok, "a1A"}
 
 # Bang version
-Cell.from_indices!({1, 1, 1})  # => "b2B"
+Sashite.Cell.from_indices!({1, 1, 1})  # => "b2B"
 
 # Round-trip conversion
-"e4" |> Cell.to_indices!() |> Cell.from_indices!()  # => "e4"
+"e4" |> Sashite.Cell.to_indices!() |> Sashite.Cell.from_indices!()  # => "e4"
 ```
 
 ## Format Specification
@@ -127,27 +125,27 @@ Cell.from_indices!({1, 1, 1})  # => "b2B"
 
 ### Validation
 ```elixir
-Cell.valid?(string)  # => boolean
+Sashite.Cell.valid?(string)  # => boolean
 ```
 
 ### Parsing
 ```elixir
-Cell.parse(string)   # => {:ok, [String.t()]} | {:error, String.t()}
-Cell.parse!(string)  # => [String.t()] | raises ArgumentError
+Sashite.Cell.parse(string)   # => {:ok, [String.t()]} | {:error, String.t()}
+Sashite.Cell.parse!(string)  # => [String.t()] | raises ArgumentError
 ```
 
 ### Dimensional Analysis
 ```elixir
-Cell.dimensions(string)  # => non_neg_integer()
+Sashite.Cell.dimensions(string)  # => non_neg_integer()
 ```
 
 ### Coordinate Conversion
 ```elixir
-Cell.to_indices(string)   # => {:ok, tuple()} | {:error, String.t()}
-Cell.to_indices!(string)  # => tuple() | raises ArgumentError
+Sashite.Cell.to_indices(string)   # => {:ok, tuple()} | {:error, String.t()}
+Sashite.Cell.to_indices!(string)  # => tuple() | raises ArgumentError
 
-Cell.from_indices(tuple)  # => {:ok, String.t()} | {:error, String.t()}
-Cell.from_indices!(tuple) # => String.t() | raises ArgumentError
+Sashite.Cell.from_indices(tuple)  # => {:ok, String.t()} | {:error, String.t()}
+Sashite.Cell.from_indices!(tuple) # => String.t() | raises ArgumentError
 ```
 
 ## Game Examples
@@ -159,32 +157,32 @@ chess_squares = for file <- ?a..?h, rank <- 1..8 do
   "#{<<file>>}#{rank}"
 end
 
-Enum.all?(chess_squares, &Cell.valid?/1)  # => true
+Enum.all?(chess_squares, Sashite.Cellvalid?/1)  # => true
 
 # Convert position
-Cell.to_indices!("e4")  # => {4, 3}
-Cell.to_indices!("h8")  # => {7, 7}
+Sashite.Cell.to_indices!("e4")  # => {4, 3}
+Sashite.Cell.to_indices!("h8")  # => {7, 7}
 ```
 
 ### Shōgi (9×9)
 ```elixir
 # Shōgi board positions
-Cell.valid?("e5")  # => true (center)
-Cell.valid?("i9")  # => true (corner)
+Sashite.Cell.valid?("e5")  # => true (center)
+Sashite.Cell.valid?("i9")  # => true (corner)
 
-Cell.to_indices!("e5")  # => {4, 4}
+Sashite.Cell.to_indices!("e5")  # => {4, 4}
 ```
 
 ### 3D Tic-Tac-Toe (3×3×3)
 ```elixir
 # Three-dimensional coordinates
-Cell.valid?("a1A")  # => true
-Cell.valid?("b2B")  # => true
-Cell.valid?("c3C")  # => true
+Sashite.Cell.valid?("a1A")  # => true
+Sashite.Cell.valid?("b2B")  # => true
+Sashite.Cell.valid?("c3C")  # => true
 
 # Winning diagonal
 diagonal = ["a1A", "b2B", "c3C"]
-Enum.map(diagonal, &Cell.to_indices!/1)
+Enum.map(diagonal, &Sashite.Cell.to_indices!/1)
 # => [{0, 0, 0}, {1, 1, 1}, {2, 2, 2}]
 ```
 
@@ -193,15 +191,15 @@ Enum.map(diagonal, &Cell.to_indices!/1)
 CELL supports extended alphabet notation for large boards:
 ```elixir
 # Single letters: a-z (positions 0-25)
-Cell.to_indices!("z1")   # => {25, 0}
+Sashite.Cell.to_indices!("z1")   # => {25, 0}
 
 # Double letters: aa-zz (positions 26-701)
-Cell.to_indices!("aa1")  # => {26, 0}
-Cell.to_indices!("ab1")  # => {27, 0}
-Cell.to_indices!("zz1")  # => {701, 0}
+Sashite.Cell.to_indices!("aa1")  # => {26, 0}
+Sashite.Cell.to_indices!("ab1")  # => {27, 0}
+Sashite.Cell.to_indices!("zz1")  # => {701, 0}
 
 # And so on...
-Cell.from_indices!({702, 0})  # => "aaa1"
+Sashite.Cell.from_indices!({702, 0})  # => "aaa1"
 ```
 
 ## Properties
