@@ -214,8 +214,8 @@ Sashite.Cell.from_indices!({702, 0})  # => "aaa1"
 ## Related Specifications
 
 - [Game Protocol](https://sashite.dev/game-protocol/) — Conceptual foundation
-- [PIN](https://sashite.dev/specs/pin/) — Piece Identifier Notation
 - [CELL Specification](https://sashite.dev/specs/cell/1.0.0/) — Official specification
+- [CELL Examples](https://sashite.dev/specs/cell/1.0.0/examples/) — Usage examples
 
 ## License
 
