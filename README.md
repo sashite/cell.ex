@@ -2,7 +2,7 @@
 
 [![Hex.pm](https://img.shields.io/hexpm/v/sashite_cell.svg)](https://hex.pm/packages/sashite_cell)
 [![Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/sashite_cell)
-[![License](https://img.shields.io/hexpm/l/sashite_cell.svg)](https://github.com/sashite/cell.ex/blob/main/LICENSE.md)
+[![License](https://img.shields.io/hexpm/l/sashite_cell.svg)](https://github.com/sashite/cell.ex/blob/main/LICENSE)
 
 > **CELL** (Coordinate Encoding for Layered Locations) implementation for Elixir.
 
@@ -219,8 +219,4 @@ Sashite.Cell.from_indices!({702, 0})  # => "aaa1"
 
 ## License
 
-Available as open source under the [MIT License](https://opensource.org/licenses/MIT).
-
-## About
-
-Maintained by [Sashité](https://sashite.com/) — promoting chess variants and sharing the beauty of board game cultures.
+Available as open source under the [Apache License 2.0](https://opensource.org/licenses/Apache-2.0).
