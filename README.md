@@ -1,4 +1,4 @@
-# Sashite.Cell
+# cell.ex
 
 [![Hex.pm](https://img.shields.io/hexpm/v/sashite_cell.svg)](https://hex.pm/packages/sashite_cell)
 [![Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/sashite_cell)
@@ -6,210 +6,155 @@
 
 > **CELL** (Coordinate Encoding for Layered Locations) implementation for Elixir.
 
-## What is CELL?
-
-CELL (Coordinate Encoding for Layered Locations) is a standardized format for representing coordinates on multi-dimensional game boards using a cyclical ASCII character system. CELL supports unlimited dimensional coordinate systems through the systematic repetition of three distinct character sets.
+## Overview
 
 This library implements the [CELL Specification v1.0.0](https://sashite.dev/specs/cell/1.0.0/).
+
+### Implementation Constraints
+
+| Constraint | Value | Rationale |
+|------------|-------|-----------|
+| Max dimensions | 3 | Sufficient for 1D, 2D, 3D boards |
+| Max index value | 255 | Covers 256×256×256 boards |
+| Max string length | 7 | `"iv256IV"` (max for all dimensions at 255) |
+
+These constraints enable bounded memory usage and safe parsing.
 
 ## Installation
 
 Add `sashite_cell` to your list of dependencies in `mix.exs`:
+
 ```elixir
 def deps do
   [
-    {:sashite_cell, "~> 1.0"}
+    {:sashite_cell, "~> 2.0"}
   ]
 end
 ```
 
-## CELL Format
-
-CELL uses a cyclical three-character-set system that repeats indefinitely based on dimensional position:
-
-| Dimension | Condition | Character Set | Examples |
-|-----------|-----------|---------------|----------|
-| 1st, 4th, 7th… | n % 3 = 1 | Latin lowercase (`a`–`z`) | `a`, `e`, `aa`, `file` |
-| 2nd, 5th, 8th… | n % 3 = 2 | Positive integers | `1`, `8`, `10`, `256` |
-| 3rd, 6th, 9th… | n % 3 = 0 | Latin uppercase (`A`–`Z`) | `A`, `C`, `AA`, `LAYER` |
-
 ## Usage
+
+### Parsing (String → Indices)
+
+Convert a CELL string into a tuple of indices.
+
 ```elixir
-# Validation
-Sashite.Cell.valid?("a1")       # => true (2D coordinate)
-Sashite.Cell.valid?("a1A")      # => true (3D coordinate)
-Sashite.Cell.valid?("e4")       # => true (2D coordinate)
-Sashite.Cell.valid?("h8Hh8")    # => true (5D coordinate)
-Sashite.Cell.valid?("*")        # => false (not a CELL coordinate)
-Sashite.Cell.valid?("a0")       # => false (invalid numeral)
-Sashite.Cell.valid?("")         # => false (empty string)
+# Standard parsing (returns {:ok, tuple} or {:error, message})
+{:ok, indices} = Sashite.Cell.to_indices("e4")
+indices  # => {4, 3}
 
-# Dimensional analysis
-Sashite.Cell.dimensions("a1")     # => 2
-Sashite.Cell.dimensions("a1A")    # => 3
-Sashite.Cell.dimensions("h8Hh8")  # => 5
-Sashite.Cell.dimensions("foobar") # => 1
+# 3D coordinate
+{:ok, indices} = Sashite.Cell.to_indices("a1A")
+indices  # => {0, 0, 0}
 
-# Parse coordinate into dimensional components
-Sashite.Cell.parse("a1A")      # => {:ok, ["a", "1", "A"]}
-Sashite.Cell.parse("h8Hh8")    # => {:ok, ["h", "8", "H", "h", "8"]}
-Sashite.Cell.parse("foobar")   # => {:ok, ["foobar"]}
-Sashite.Cell.parse("1nvalid")  # => {:error, "Invalid CELL coordinate: 1nvalid"}
+# Bang version (raises on error)
+Sashite.Cell.to_indices!("e4")  # => {4, 3}
+```
 
-# Bang version for direct access
-Sashite.Cell.parse!("a1A")     # => ["a", "1", "A"]
+### Formatting (Indices → String)
 
-# Convert coordinates to 0-indexed integer tuples
-Sashite.Cell.to_indices("a1")    # => {:ok, {0, 0}}
-Sashite.Cell.to_indices("e4")    # => {:ok, {4, 3}}
-Sashite.Cell.to_indices("a1A")   # => {:ok, {0, 0, 0}}
-Sashite.Cell.to_indices("b2B")   # => {:ok, {1, 1, 1}}
+Convert a tuple of indices back to a CELL string.
+
+```elixir
+# Standard formatting (returns {:ok, string} or {:error, message})
+{:ok, coord} = Sashite.Cell.from_indices({4, 3})
+coord  # => "e4"
 
 # Bang version
-Sashite.Cell.to_indices!("e4")   # => {4, 3}
+Sashite.Cell.from_indices!({0, 0, 0})  # => "a1A"
+Sashite.Cell.from_indices!({2, 2, 2})  # => "c3C"
+```
 
-# Convert 0-indexed integer tuples back to CELL coordinates
-Sashite.Cell.from_indices({0, 0})      # => {:ok, "a1"}
-Sashite.Cell.from_indices({4, 3})      # => {:ok, "e4"}
-Sashite.Cell.from_indices({0, 0, 0})   # => {:ok, "a1A"}
+### Validation
 
-# Bang version
-Sashite.Cell.from_indices!({1, 1, 1})  # => "b2B"
+```elixir
+# Boolean check
+Sashite.Cell.valid?("e4")   # => true
+Sashite.Cell.valid?("a0")   # => false
+```
+
+### Accessing Coordinate Data
+
+```elixir
+indices = Sashite.Cell.to_indices!("e4")
+
+# Get dimensions count
+tuple_size(indices)  # => 2
+
+# Access individual index
+elem(indices, 0)  # => 4
+elem(indices, 1)  # => 3
 
 # Round-trip conversion
 "e4" |> Sashite.Cell.to_indices!() |> Sashite.Cell.from_indices!()  # => "e4"
 ```
 
-## Format Specification
-
-### Dimensional Patterns
-
-| Dimensions | Pattern | Examples |
-|------------|---------|----------|
-| 1D | `<lower>` | `a`, `e`, `file` |
-| 2D | `<lower><integer>` | `a1`, `e4`, `aa10` |
-| 3D | `<lower><integer><upper>` | `a1A`, `e4B` |
-| 4D | `<lower><integer><upper><lower>` | `a1Ab`, `e4Bc` |
-| 5D | `<lower><integer><upper><lower><integer>` | `a1Ab2` |
-
-### Regular Expression
-```regex
-^[a-z]+(?:[1-9][0-9]*[A-Z]+[a-z]+)*(?:[1-9][0-9]*[A-Z]*)?$
-```
-
-### Valid Examples
-
-| Coordinate | Dimensions | Description |
-|------------|------------|-------------|
-| `a` | 1D | Single file |
-| `a1` | 2D | Standard chess-style |
-| `e4` | 2D | Chess center |
-| `a1A` | 3D | 3D tic-tac-toe |
-| `h8Hh8` | 5D | Multi-dimensional |
-| `aa1AA` | 3D | Extended alphabet |
-
-### Invalid Examples
-
-| String | Reason |
-|--------|--------|
-| `""` | Empty string |
-| `1` | Starts with digit |
-| `A` | Starts with uppercase |
-| `a0` | Zero is not a valid positive integer |
-| `a01` | Leading zero in numeric dimension |
-| `aA` | Missing numeric dimension |
-| `a1a` | Missing uppercase dimension |
-| `a1A1` | Numeric after uppercase without lowercase |
-
 ## API Reference
 
-### Validation
+### Constants
+
 ```elixir
-Sashite.Cell.valid?(string)  # => boolean
+Sashite.Cell.Coordinate.max_dimensions()    # => 3
+Sashite.Cell.Coordinate.max_index_value()   # => 255
+Sashite.Cell.Coordinate.max_string_length() # => 7
 ```
 
 ### Parsing
+
 ```elixir
-Sashite.Cell.parse(string)   # => {:ok, [String.t()]} | {:error, String.t()}
-Sashite.Cell.parse!(string)  # => [String.t()] | raises ArgumentError
+@spec to_indices(String.t()) :: {:ok, tuple()} | {:error, String.t()}
+def to_indices(string)
+
+@spec to_indices!(String.t()) :: tuple()
+def to_indices!(string)
 ```
 
-### Dimensional Analysis
+Converts a CELL string to a tuple of 0-indexed integers.
+The bang version raises `ArgumentError` on invalid input.
+
+### Formatting
+
 ```elixir
-Sashite.Cell.dimensions(string)  # => non_neg_integer()
+@spec from_indices(tuple()) :: {:ok, String.t()} | {:error, String.t()}
+def from_indices(indices)
+
+@spec from_indices!(tuple()) :: String.t()
+def from_indices!(indices)
 ```
 
-### Coordinate Conversion
-```elixir
-Sashite.Cell.to_indices(string)   # => {:ok, tuple()} | {:error, String.t()}
-Sashite.Cell.to_indices!(string)  # => tuple() | raises ArgumentError
+Converts a tuple of 0-indexed integers to a CELL string.
+The bang version raises `ArgumentError` on invalid input.
 
-Sashite.Cell.from_indices(tuple)  # => {:ok, String.t()} | {:error, String.t()}
-Sashite.Cell.from_indices!(tuple) # => String.t() | raises ArgumentError
+### Validation
+
+```elixir
+@spec valid?(String.t()) :: boolean()
+def valid?(string)
 ```
 
-## Game Examples
+Reports whether the string is a valid CELL coordinate.
 
-### Chess (8×8)
-```elixir
-# Standard chess coordinates
-chess_squares = for file <- ?a..?h, rank <- 1..8 do
-  "#{<<file>>}#{rank}"
-end
+### Errors
 
-Enum.all?(chess_squares, Sashite.Cellvalid?/1)  # => true
+All parsing and validation errors return `{:error, message}` tuples or raise `ArgumentError` for bang versions:
 
-# Convert position
-Sashite.Cell.to_indices!("e4")  # => {4, 3}
-Sashite.Cell.to_indices!("h8")  # => {7, 7}
-```
+| Message | Cause |
+|---------|-------|
+| `"empty input"` | String length is 0 |
+| `"input exceeds 7 characters"` | String too long |
+| `"must start with lowercase letter"` | Invalid first character |
+| `"unexpected character"` | Character violates the cyclic sequence |
+| `"leading zero"` | Numeric part starts with '0' |
+| `"exceeds 3 dimensions"` | More than 3 dimensions |
+| `"index exceeds 255"` | Decoded value out of range |
 
-### Shōgi (9×9)
-```elixir
-# Shōgi board positions
-Sashite.Cell.valid?("e5")  # => true (center)
-Sashite.Cell.valid?("i9")  # => true (corner)
+## Design Principles
 
-Sashite.Cell.to_indices!("e5")  # => {4, 4}
-```
-
-### 3D Tic-Tac-Toe (3×3×3)
-```elixir
-# Three-dimensional coordinates
-Sashite.Cell.valid?("a1A")  # => true
-Sashite.Cell.valid?("b2B")  # => true
-Sashite.Cell.valid?("c3C")  # => true
-
-# Winning diagonal
-diagonal = ["a1A", "b2B", "c3C"]
-Enum.map(diagonal, &Sashite.Cell.to_indices!/1)
-# => [{0, 0, 0}, {1, 1, 1}, {2, 2, 2}]
-```
-
-## Extended Alphabet
-
-CELL supports extended alphabet notation for large boards:
-```elixir
-# Single letters: a-z (positions 0-25)
-Sashite.Cell.to_indices!("z1")   # => {25, 0}
-
-# Double letters: aa-zz (positions 26-701)
-Sashite.Cell.to_indices!("aa1")  # => {26, 0}
-Sashite.Cell.to_indices!("ab1")  # => {27, 0}
-Sashite.Cell.to_indices!("zz1")  # => {701, 0}
-
-# And so on...
-Sashite.Cell.from_indices!({702, 0})  # => "aaa1"
-```
-
-## Properties
-
-- **Multi-dimensional**: Supports unlimited dimensional coordinate systems
-- **Cyclical**: Uses systematic three-character-set repetition
-- **ASCII-based**: Pure ASCII characters for universal compatibility
-- **Unambiguous**: Each coordinate maps to exactly one location
-- **Scalable**: Extends naturally from 1D to unlimited dimensions
-- **Rule-agnostic**: Independent of specific game mechanics
+- **Elixir idioms**: `{:ok, value}` / `{:error, reason}` tuples with bang variants
+- **Tuple-based coordinates**: Native Elixir tuples for indices
+- **Predicate functions**: `valid?/1` follows Elixir naming conventions
+- **Immutable by default**: All functions return new values
+- **No dependencies**: Pure Elixir standard library only
 
 ## Related Specifications
 
