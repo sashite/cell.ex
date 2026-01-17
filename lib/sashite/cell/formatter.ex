@@ -98,28 +98,28 @@ defmodule Sashite.Cell.Formatter do
   # Single letter: a=0, b=1, ..., z=25
   # Double letter: aa=26, ab=27, ..., az=51, ba=52, ..., iv=255
   defp encode_lowercase(value) when value <= 25 do
-    <<(?a + value)>>
+    <<?a + value>>
   end
 
   defp encode_lowercase(value) do
     offset = value - 26
     first = div(offset, 26)
     second = rem(offset, 26)
-    <<(?a + first), (?a + second)>>
+    <<?a + first, ?a + second>>
   end
 
   # Encode a 0-indexed value as uppercase letters
   # Single letter: A=0, B=1, ..., Z=25
   # Double letter: AA=26, AB=27, ..., AZ=51, BA=52, ..., IV=255
   defp encode_uppercase(value) when value <= 25 do
-    <<(?A + value)>>
+    <<?A + value>>
   end
 
   defp encode_uppercase(value) do
     offset = value - 26
     first = div(offset, 26)
     second = rem(offset, 26)
-    <<(?A + first), (?A + second)>>
+    <<?A + first, ?A + second>>
   end
 
   # Encode a 0-indexed rank as a 1-indexed positive integer string
