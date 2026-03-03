@@ -5,8 +5,6 @@ defmodule Sashite.Cell do
   This library provides parsing, formatting, and validation of CELL coordinates
   as specified in the [CELL Specification v1.0.0](https://sashite.dev/specs/cell/1.0.0/).
 
-  ## Overview
-
   CELL coordinates encode positions on multi-dimensional boards using a cyclical
   ASCII character system:
 
@@ -25,22 +23,56 @@ defmodule Sashite.Cell do
 
   ## Examples
 
-      # Parsing
       iex> Sashite.Cell.to_indices("e4")
       {:ok, {4, 3}}
 
-      # Formatting
       iex> Sashite.Cell.from_indices({4, 3})
       {:ok, "e4"}
 
-      # Validation
       iex> Sashite.Cell.valid?("e4")
       true
   """
 
-  alias Sashite.Cell.{Coordinate, Formatter, Parser}
+  alias Sashite.Cell.{Formatter, Parser}
 
-  # --- Parsing ---
+  # ── Constants ─────────────────────────────────────────────────────────
+
+  @doc """
+  Returns the maximum number of dimensions (3).
+
+  ## Examples
+
+      iex> Sashite.Cell.max_dimensions()
+      3
+  """
+  @spec max_dimensions() :: pos_integer()
+  def max_dimensions, do: 3
+
+  @doc """
+  Returns the maximum index value per dimension (255).
+
+  ## Examples
+
+      iex> Sashite.Cell.max_index_value()
+      255
+  """
+  @spec max_index_value() :: non_neg_integer()
+  def max_index_value, do: 255
+
+  @doc """
+  Returns the maximum string length for a CELL coordinate (7).
+
+  The longest valid coordinate is `"iv256IV"` (indices 255, 255, 255).
+
+  ## Examples
+
+      iex> Sashite.Cell.max_string_length()
+      7
+  """
+  @spec max_string_length() :: pos_integer()
+  def max_string_length, do: 7
+
+  # ── Parsing ───────────────────────────────────────────────────────────
 
   @doc """
   Parses a CELL string into a tuple of 0-indexed integers.
@@ -65,15 +97,15 @@ defmodule Sashite.Cell do
       {:ok, {255, 255, 255}}
 
       iex> Sashite.Cell.to_indices("")
-      {:error, "empty input"}
+      {:error, :empty_input}
 
       iex> Sashite.Cell.to_indices("a0")
-      {:error, "leading zero"}
+      {:error, :leading_zero}
 
-      iex> Sashite.Cell.to_indices("a-1")
-      {:error, "unexpected character"}
+      iex> Sashite.Cell.to_indices("A1")
+      {:error, :must_start_with_lowercase}
   """
-  @spec to_indices(String.t()) :: {:ok, Coordinate.t()} | {:error, String.t()}
+  @spec to_indices(String.t()) :: {:ok, tuple()} | {:error, atom()}
   defdelegate to_indices(string), to: Parser, as: :parse
 
   @doc """
@@ -90,10 +122,10 @@ defmodule Sashite.Cell do
       iex> Sashite.Cell.to_indices!("iv256IV")
       {255, 255, 255}
   """
-  @spec to_indices!(String.t()) :: Coordinate.t()
+  @spec to_indices!(String.t()) :: tuple()
   defdelegate to_indices!(string), to: Parser, as: :parse!
 
-  # --- Formatting ---
+  # ── Formatting ────────────────────────────────────────────────────────
 
   @doc """
   Formats a tuple of 0-indexed integers into a CELL string.
@@ -118,12 +150,12 @@ defmodule Sashite.Cell do
       {:ok, "iv256IV"}
 
       iex> Sashite.Cell.from_indices({256, 0})
-      {:error, "index exceeds 255"}
+      {:error, :index_out_of_range}
 
       iex> Sashite.Cell.from_indices({})
-      {:error, "invalid dimensions"}
+      {:error, :invalid_dimensions}
   """
-  @spec from_indices(tuple()) :: {:ok, String.t()} | {:error, String.t()}
+  @spec from_indices(tuple()) :: {:ok, String.t()} | {:error, atom()}
   defdelegate from_indices(indices), to: Formatter, as: :format
 
   @doc """
@@ -143,7 +175,7 @@ defmodule Sashite.Cell do
   @spec from_indices!(tuple()) :: String.t()
   defdelegate from_indices!(indices), to: Formatter, as: :format!
 
-  # --- Validation ---
+  # ── Validation ────────────────────────────────────────────────────────
 
   @doc """
   Returns `true` if the string is a valid CELL coordinate.

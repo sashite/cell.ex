@@ -13,4 +13,7 @@ defmodule SashiteCell do
   defdelegate from_indices(indices), to: Sashite.Cell
   defdelegate from_indices!(indices), to: Sashite.Cell
   defdelegate valid?(string), to: Sashite.Cell
+  defdelegate max_dimensions(), to: Sashite.Cell
+  defdelegate max_index_value(), to: Sashite.Cell
+  defdelegate max_string_length(), to: Sashite.Cell
 end

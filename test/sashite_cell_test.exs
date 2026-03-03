@@ -1,150 +1,201 @@
-defmodule Sashite.CellTest do
+defmodule SashiteCellTest do
   use ExUnit.Case, async: true
 
-  doctest Sashite.Cell
+  # ===========================================================================
+  # Constants
+  # ===========================================================================
 
-  describe "to_indices/1" do
-    test "parses common chess coordinates" do
-      assert Sashite.Cell.to_indices("a1") == {:ok, {0, 0}}
-      assert Sashite.Cell.to_indices("e4") == {:ok, {4, 3}}
-      assert Sashite.Cell.to_indices("h8") == {:ok, {7, 7}}
-    end
-
-    test "returns error tuple on invalid input" do
-      assert Sashite.Cell.to_indices("") == {:error, "empty input"}
-      assert Sashite.Cell.to_indices("a0") == {:error, "leading zero"}
+  describe "max_dimensions/0" do
+    test "returns 3" do
+      assert Sashite.Cell.max_dimensions() == 3
     end
   end
 
-  describe "to_indices!/1" do
-    test "returns coordinate on valid input" do
-      assert Sashite.Cell.to_indices!("e4") == {4, 3}
-    end
-
-    test "raises on invalid input" do
-      assert_raise ArgumentError, fn ->
-        Sashite.Cell.to_indices!("")
-      end
+  describe "max_index_value/0" do
+    test "returns 255" do
+      assert Sashite.Cell.max_index_value() == 255
     end
   end
 
-  describe "from_indices/1" do
-    test "formats common chess coordinates" do
-      assert Sashite.Cell.from_indices({0, 0}) == {:ok, "a1"}
-      assert Sashite.Cell.from_indices({4, 3}) == {:ok, "e4"}
-      assert Sashite.Cell.from_indices({7, 7}) == {:ok, "h8"}
+  describe "max_string_length/0" do
+    test "returns 7" do
+      assert Sashite.Cell.max_string_length() == 7
     end
 
-    test "returns error tuple on invalid input" do
-      assert Sashite.Cell.from_indices({256, 0}) == {:error, "index exceeds 255"}
-      assert Sashite.Cell.from_indices({}) == {:error, "invalid dimensions"}
+    test "matches the length of the maximum coordinate" do
+      {:ok, max_coord} = Sashite.Cell.from_indices({255, 255, 255})
+      assert byte_size(max_coord) == Sashite.Cell.max_string_length()
     end
   end
 
-  describe "from_indices!/1" do
-    test "returns string on valid input" do
-      assert Sashite.Cell.from_indices!({4, 3}) == "e4"
+  # ===========================================================================
+  # Round-trip: parse then format
+  # ===========================================================================
+
+  describe "round-trip to_indices then from_indices" do
+    test "1D single letter" do
+      assert "e" == "e" |> Sashite.Cell.to_indices!() |> Sashite.Cell.from_indices!()
     end
 
-    test "raises on invalid input" do
-      assert_raise ArgumentError, fn ->
-        Sashite.Cell.from_indices!({256, 0})
-      end
+    test "1D double letter" do
+      assert "aa" == "aa" |> Sashite.Cell.to_indices!() |> Sashite.Cell.from_indices!()
+    end
+
+    test "1D maximum" do
+      assert "iv" == "iv" |> Sashite.Cell.to_indices!() |> Sashite.Cell.from_indices!()
+    end
+
+    test "2D typical" do
+      assert "e4" == "e4" |> Sashite.Cell.to_indices!() |> Sashite.Cell.from_indices!()
+    end
+
+    test "2D double letter file" do
+      assert "aa10" == "aa10" |> Sashite.Cell.to_indices!() |> Sashite.Cell.from_indices!()
+    end
+
+    test "3D minimum" do
+      assert "a1A" == "a1A" |> Sashite.Cell.to_indices!() |> Sashite.Cell.from_indices!()
+    end
+
+    test "3D maximum" do
+      assert "iv256IV" == "iv256IV" |> Sashite.Cell.to_indices!() |> Sashite.Cell.from_indices!()
     end
   end
 
-  describe "valid?/1" do
-    test "returns true for valid coordinates" do
-      assert Sashite.Cell.valid?("a1")
-      assert Sashite.Cell.valid?("e4")
-      assert Sashite.Cell.valid?("a1A")
-      assert Sashite.Cell.valid?("iv256IV")
+  # ===========================================================================
+  # Round-trip: format then parse
+  # ===========================================================================
+
+  describe "round-trip from_indices then to_indices" do
+    test "1D minimum" do
+      assert {0} == {0} |> Sashite.Cell.from_indices!() |> Sashite.Cell.to_indices!()
     end
 
-    test "returns false for invalid coordinates" do
-      refute Sashite.Cell.valid?("")
-      refute Sashite.Cell.valid?("a0")
-      refute Sashite.Cell.valid?("1a")
-      refute Sashite.Cell.valid?("invalid")
+    test "1D maximum" do
+      assert {255} == {255} |> Sashite.Cell.from_indices!() |> Sashite.Cell.to_indices!()
     end
 
-    test "returns false for non-string input" do
-      refute Sashite.Cell.valid?(nil)
-      refute Sashite.Cell.valid?(123)
-      refute Sashite.Cell.valid?([])
+    test "2D typical" do
+      assert {4, 3} == {4, 3} |> Sashite.Cell.from_indices!() |> Sashite.Cell.to_indices!()
+    end
+
+    test "2D boundaries" do
+      assert {255, 255} ==
+               {255, 255} |> Sashite.Cell.from_indices!() |> Sashite.Cell.to_indices!()
+    end
+
+    test "3D minimum" do
+      assert {0, 0, 0} == {0, 0, 0} |> Sashite.Cell.from_indices!() |> Sashite.Cell.to_indices!()
+    end
+
+    test "3D maximum" do
+      assert {255, 255, 255} ==
+               {255, 255, 255} |> Sashite.Cell.from_indices!() |> Sashite.Cell.to_indices!()
     end
   end
 
-  describe "round-trip conversion" do
-    test "string -> indices -> string preserves value" do
-      coordinates = ["a1", "e4", "h8", "a1A", "b2B", "aa1", "a10", "iv256IV"]
+  # ===========================================================================
+  # Consistency: valid? agrees with to_indices
+  # ===========================================================================
+
+  describe "valid?/1 consistency with to_indices/1" do
+    test "valid? returns true for all parseable coordinates" do
+      coordinates = ["a", "z", "aa", "iv", "a1", "e4", "a256", "a1A", "iv256IV"]
 
       for coord <- coordinates do
-        assert coord
-               |> Sashite.Cell.to_indices!()
-               |> Sashite.Cell.from_indices!() == coord
+        assert Sashite.Cell.valid?(coord), "expected valid?(#{inspect(coord)}) to be true"
+        assert {:ok, _} = Sashite.Cell.to_indices(coord)
       end
     end
 
-    test "indices -> string -> indices preserves value" do
-      indices = [
-        {0, 0},
-        {4, 3},
-        {7, 7},
-        {0, 0, 0},
-        {1, 1, 1},
-        {26, 0},
-        {0, 9},
-        {255, 255, 255}
-      ]
+    test "valid? returns false for all unparseable inputs" do
+      inputs = ["", "A1", "a0", "a01", "1a", "aA", "a1a", "a1A1", "a1Ab", "iw", "a1IW"]
 
-      for idx <- indices do
-        assert idx
-               |> Sashite.Cell.from_indices!()
-               |> Sashite.Cell.to_indices!() == idx
-      end
-    end
-
-    test "all valid 2D chess coordinates round-trip" do
-      for file <- 0..7, rank <- 0..7 do
-        indices = {file, rank}
-
-        assert indices
-               |> Sashite.Cell.from_indices!()
-               |> Sashite.Cell.to_indices!() == indices
-      end
-    end
-
-    test "all valid 2D shogi coordinates round-trip" do
-      for file <- 0..8, rank <- 0..8 do
-        indices = {file, rank}
-
-        assert indices
-               |> Sashite.Cell.from_indices!()
-               |> Sashite.Cell.to_indices!() == indices
+      for input <- inputs do
+        refute Sashite.Cell.valid?(input), "expected valid?(#{inspect(input)}) to be false"
+        assert {:error, _} = Sashite.Cell.to_indices(input)
       end
     end
   end
 
-  describe "game-specific coordinates" do
-    test "chess coordinates" do
-      # Standard chess squares
-      assert Sashite.Cell.to_indices!("a1") == {0, 0}
-      assert Sashite.Cell.to_indices!("e4") == {4, 3}
-      assert Sashite.Cell.to_indices!("d4") == {3, 3}
-      assert Sashite.Cell.to_indices!("h8") == {7, 7}
+  # ===========================================================================
+  # Entry point: SashiteCell delegates correctly
+  # ===========================================================================
+
+  describe "SashiteCell entry point delegation" do
+    test "to_indices/1 delegates" do
+      assert SashiteCell.to_indices("e4") == Sashite.Cell.to_indices("e4")
     end
 
-    test "shogi coordinates" do
-      # 9x9 board
-      assert Sashite.Cell.to_indices!("e5") == {4, 4}
-      assert Sashite.Cell.to_indices!("i9") == {8, 8}
+    test "to_indices!/1 delegates" do
+      assert SashiteCell.to_indices!("e4") == Sashite.Cell.to_indices!("e4")
     end
 
-    test "3D tic-tac-toe coordinates" do
-      assert Sashite.Cell.to_indices!("a1A") == {0, 0, 0}
-      assert Sashite.Cell.to_indices!("b2B") == {1, 1, 1}
-      assert Sashite.Cell.to_indices!("c3C") == {2, 2, 2}
+    test "from_indices/1 delegates" do
+      assert SashiteCell.from_indices({4, 3}) == Sashite.Cell.from_indices({4, 3})
+    end
+
+    test "from_indices!/1 delegates" do
+      assert SashiteCell.from_indices!({4, 3}) == Sashite.Cell.from_indices!({4, 3})
+    end
+
+    test "valid?/1 delegates" do
+      assert SashiteCell.valid?("e4") == Sashite.Cell.valid?("e4")
+      assert SashiteCell.valid?("") == Sashite.Cell.valid?("")
+    end
+
+    test "max_dimensions/0 delegates" do
+      assert SashiteCell.max_dimensions() == Sashite.Cell.max_dimensions()
+    end
+
+    test "max_index_value/0 delegates" do
+      assert SashiteCell.max_index_value() == Sashite.Cell.max_index_value()
+    end
+
+    test "max_string_length/0 delegates" do
+      assert SashiteCell.max_string_length() == Sashite.Cell.max_string_length()
+    end
+  end
+
+  # ===========================================================================
+  # Spec examples: §8 invalid coordinate examples
+  # ===========================================================================
+
+  describe "CELL spec §8 invalid coordinate examples" do
+    test "empty string" do
+      refute Sashite.Cell.valid?("")
+    end
+
+    test "starts with digit" do
+      refute Sashite.Cell.valid?("1")
+    end
+
+    test "starts with uppercase" do
+      refute Sashite.Cell.valid?("A")
+    end
+
+    test "zero is not a valid positive integer" do
+      refute Sashite.Cell.valid?("a0")
+    end
+
+    test "leading zero in numeric dimension" do
+      refute Sashite.Cell.valid?("a01")
+    end
+
+    test "missing numeric dimension between lowercase and uppercase" do
+      refute Sashite.Cell.valid?("aA")
+    end
+
+    test "missing uppercase dimension between numeric and lowercase" do
+      refute Sashite.Cell.valid?("a1a")
+    end
+
+    test "numeric after uppercase without restarting cycle" do
+      refute Sashite.Cell.valid?("a1A1")
+    end
+
+    test "starts with digit instead of lowercase" do
+      refute Sashite.Cell.valid?("1a")
     end
   end
 end

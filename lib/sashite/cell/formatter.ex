@@ -1,130 +1,115 @@
 defmodule Sashite.Cell.Formatter do
-  @moduledoc """
-  Formats coordinate tuples into CELL strings.
+  @moduledoc false
 
-  Converts validated coordinate indices back to the canonical CELL
-  string representation.
+  # Formats coordinate tuples into CELL strings.
+  #
+  # Converts validated coordinate indices back to the canonical CELL
+  # string representation using direct binary construction.
+  #
+  # Letter dimensions use bijective base-26 encoding:
+  #   - 0-25  → single letter (a-z or A-Z)
+  #   - 26-255 → double letter (aa-iv or AA-IV)
+  #
+  # Integer dimensions are 1-indexed: index 0 → "1", index 255 → "256".
+  #
+  # Time complexity: O(1) — bounded output size (max 7 bytes).
+  # Space complexity: O(1) — single binary allocation via iodata.
 
-  ## Letter Encoding
+  @max_index_value 255
 
-  CELL uses a bijective base-26 encoding for letter dimensions:
+  # ── Public API ────────────────────────────────────────────────────────
 
-  - Single letter: 0-25 → `a-z` (lowercase) or `A-Z` (uppercase)
-  - Double letter: 26-255 → `aa-iv` (lowercase) or `AA-IV` (uppercase)
+  @doc false
+  @spec format(tuple()) :: {:ok, String.t()} | {:error, atom()}
 
-  This ensures each index maps to exactly one canonical string.
-  """
-
-  alias Sashite.Cell.Coordinate
-
-  import Coordinate, only: [is_valid_index: 1]
-
-  # --- Public API ---
-
-  @doc """
-  Formats a coordinate tuple into a CELL string.
-
-  Returns `{:ok, string}` on success, or `{:error, reason}` on failure.
-
-  ## Examples
-
-      iex> Sashite.Cell.Formatter.format({4, 3})
-      {:ok, "e4"}
-
-      iex> Sashite.Cell.Formatter.format({0, 0, 0})
-      {:ok, "a1A"}
-
-      iex> Sashite.Cell.Formatter.format({26, 0})
-      {:ok, "aa1"}
-
-      iex> Sashite.Cell.Formatter.format({255, 255, 255})
-      {:ok, "iv256IV"}
-
-      iex> Sashite.Cell.Formatter.format({256, 0})
-      {:error, "index exceeds 255"}
-
-      iex> Sashite.Cell.Formatter.format({})
-      {:error, "invalid dimensions"}
-  """
-  @spec format(tuple()) :: {:ok, String.t()} | {:error, String.t()}
-  def format({dim1}) when is_valid_index(dim1) do
+  # 1D: lowercase only
+  def format({dim1}) when is_integer(dim1) and dim1 >= 0 and dim1 <= @max_index_value do
     {:ok, encode_lowercase(dim1)}
   end
 
-  def format({dim1, dim2}) when is_valid_index(dim1) and is_valid_index(dim2) do
-    {:ok, encode_lowercase(dim1) <> encode_integer(dim2)}
+  # 2D: lowercase + integer
+  def format({dim1, dim2})
+      when is_integer(dim1) and dim1 >= 0 and dim1 <= @max_index_value and
+             is_integer(dim2) and dim2 >= 0 and dim2 <= @max_index_value do
+    {:ok, IO.iodata_to_binary([encode_lowercase(dim1), encode_integer(dim2)])}
   end
 
+  # 3D: lowercase + integer + uppercase
   def format({dim1, dim2, dim3})
-      when is_valid_index(dim1) and is_valid_index(dim2) and is_valid_index(dim3) do
-    {:ok, encode_lowercase(dim1) <> encode_integer(dim2) <> encode_uppercase(dim3)}
+      when is_integer(dim1) and dim1 >= 0 and dim1 <= @max_index_value and
+             is_integer(dim2) and dim2 >= 0 and dim2 <= @max_index_value and
+             is_integer(dim3) and dim3 >= 0 and dim3 <= @max_index_value do
+    {:ok,
+     IO.iodata_to_binary([encode_lowercase(dim1), encode_integer(dim2), encode_uppercase(dim3)])}
   end
 
-  def format(tuple) when is_tuple(tuple) and tuple_size(tuple) >= 1 and tuple_size(tuple) <= 3 do
-    {:error, "index exceeds 255"}
+  # Tuple with 1-3 elements but invalid index values
+  def format(tuple)
+      when is_tuple(tuple) and tuple_size(tuple) >= 1 and tuple_size(tuple) <= 3 do
+    {:error, :index_out_of_range}
   end
 
+  # Tuple with wrong arity
   def format(tuple) when is_tuple(tuple) do
-    {:error, "invalid dimensions"}
+    {:error, :invalid_dimensions}
   end
 
-  def format(_), do: {:error, "invalid coordinate"}
+  # Not a tuple
+  def format(_), do: {:error, :not_a_tuple}
 
-  @doc """
-  Formats a coordinate tuple, raising `ArgumentError` on error.
-
-  ## Examples
-
-      iex> Sashite.Cell.Formatter.format!({4, 3})
-      "e4"
-
-      iex> Sashite.Cell.Formatter.format!({26, 0})
-      "aa1"
-
-      iex> Sashite.Cell.Formatter.format!({255, 255, 255})
-      "iv256IV"
-  """
+  @doc false
   @spec format!(tuple()) :: String.t()
   def format!(tuple) do
     case format(tuple) do
       {:ok, string} -> string
-      {:error, reason} -> raise ArgumentError, reason
+      {:error, reason} -> raise ArgumentError, Atom.to_string(reason)
     end
   end
 
-  # --- Private Encoding Functions ---
+  # ── Lowercase letter encoding (dimension 1) ──────────────────────────
+  #
+  # Single letter: 0-25 → "a"-"z"
+  # Double letter: 26-255 → "aa"-"iv"
 
-  # Encode a 0-indexed value as lowercase letters
-  # Single letter: a=0, b=1, ..., z=25
-  # Double letter: aa=26, ab=27, ..., az=51, ba=52, ..., iv=255
   defp encode_lowercase(value) when value <= 25 do
-    <<?a + value>>
+    <<value + ?a>>
   end
 
   defp encode_lowercase(value) do
     offset = value - 26
-    first = div(offset, 26)
-    second = rem(offset, 26)
-    <<?a + first, ?a + second>>
+    <<div(offset, 26) + ?a, rem(offset, 26) + ?a>>
   end
 
-  # Encode a 0-indexed value as uppercase letters
-  # Single letter: A=0, B=1, ..., Z=25
-  # Double letter: AA=26, AB=27, ..., AZ=51, BA=52, ..., IV=255
+  # ── Uppercase letter encoding (dimension 3) ──────────────────────────
+  #
+  # Single letter: 0-25 → "A"-"Z"
+  # Double letter: 26-255 → "AA"-"IV"
+
   defp encode_uppercase(value) when value <= 25 do
-    <<?A + value>>
+    <<value + ?A>>
   end
 
   defp encode_uppercase(value) do
     offset = value - 26
-    first = div(offset, 26)
-    second = rem(offset, 26)
-    <<?A + first, ?A + second>>
+    <<div(offset, 26) + ?A, rem(offset, 26) + ?A>>
   end
 
-  # Encode a 0-indexed rank as a 1-indexed positive integer string
-  # 0 → "1", 1 → "2", ..., 255 → "256"
+  # ── Integer encoding (dimension 2) ───────────────────────────────────
+  #
+  # Converts a 0-indexed value to a 1-indexed string: 0 → "1", 255 → "256".
+  # Direct digit construction avoids Integer.to_string/1 overhead.
+
+  defp encode_integer(index) when index < 9 do
+    <<index + ?1>>
+  end
+
+  defp encode_integer(index) when index < 99 do
+    value = index + 1
+    <<div(value, 10) + ?0, rem(value, 10) + ?0>>
+  end
+
   defp encode_integer(index) do
-    Integer.to_string(index + 1)
+    value = index + 1
+    <<div(value, 100) + ?0, rem(div(value, 10), 10) + ?0, rem(value, 10) + ?0>>
   end
 end

@@ -1,7 +1,7 @@
 defmodule Sashite.Cell.MixProject do
   use Mix.Project
 
-  @version "2.0.0"
+  @version "3.0.0"
   @source_url "https://github.com/sashite/cell.ex"
 
   def project do
@@ -18,27 +18,17 @@ defmodule Sashite.Cell.MixProject do
       name: "Sashite.Cell",
       source_url: @source_url,
       homepage_url: "https://sashite.dev/specs/cell/",
-      docs: docs(),
-
-      # Quality tools
-      dialyzer: dialyzer(),
-      test_coverage: [tool: ExCoveralls]
-    ]
-  end
-
-  def cli do
-    [
-      preferred_envs: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.html": :test,
-        "coveralls.github": :test
+      docs: [
+        main: "readme",
+        extras: ["README.md", "LICENSE"]
       ]
     ]
   end
 
   def application do
-    []
+    [
+      extra_applications: [:logger]
+    ]
   end
 
   defp deps do
@@ -68,28 +58,6 @@ defmodule Sashite.Cell.MixProject do
         "Documentation" => "https://hexdocs.pm/sashite_cell"
       },
       maintainers: ["Cyril Kato"]
-    ]
-  end
-
-  defp docs do
-    [
-      main: "readme",
-      extras: ["README.md", "LICENSE"],
-      source_ref: "v#{@version}"
-    ]
-  end
-
-  defp dialyzer do
-    [
-      plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
-      plt_add_apps: [:mix],
-      flags: [
-        :unmatched_returns,
-        :error_handling,
-        :no_opaque,
-        :unknown,
-        :no_return
-      ]
     ]
   end
 end
